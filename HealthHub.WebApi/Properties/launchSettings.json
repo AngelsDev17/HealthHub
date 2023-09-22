@@ -1,0 +1,49 @@
+﻿{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "http://localhost:5046",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DbSettings__ConnectionString": "mongodb://localhost:27017/",
+        "DbSettings__DatabaseName": "HealthHubDb",
+        "JwtTokenSettings__Issuer": "HealthHub",
+        "JwtTokenSettings__Audience": "Users",
+        "JwtTokenSettings__SecretKey": "KUHql1BwM52UUCPJXz9qbgABNpZicFSx",
+        "ENV__EMAIL_HOST": "smtp.gmail.com",
+        "ENV__EMAIL_PORT": "587",
+        "ENV__EMAIL_USERNAME": "HealthHub",
+        "ENV__EMAIL_USERNAME_ADDRESS": "miguelangels2468@gmail.com",
+        "ENV__EMAIL_PASSWORD": "bnpdnueyztavmtcc",
+        "ENV__EXPIRATION_DATE_DAYS": "1",
+        "ENV__PROJECT_NAME": "HealthHub"
+      }
+    },
+    "https": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "https://localhost:7042;http://localhost:5046",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DbSettings__ConnectionString": "mongodb://localhost:27017/",
+        "DbSettings__DatabaseName": "HealthHub",
+        "JwtTokenSettings__Issuer": "HealthHub",
+        "JwtTokenSettings__Audience": "Users",
+        "JwtTokenSettings__SecretKey": "KUHql1BwM52UUCPJXz9qbgABNpZicFSx",
+        "ENV__EMAIL_HOST": "smtp.gmail.com",
+        "ENV__EMAIL_PORT": "587",
+        "ENV__EMAIL_USERNAME": "HealthHub",
+        "ENV__EMAIL_USERNAME_ADDRESS": "miguelangels2468@gmail.com",
+        "ENV__EMAIL_PASSWORD": "bnpdnueyztavmtcc",
+        "ENV__EXPIRATION_DATE_DAYS": "1",
+        "ENV__PROJECT_NAME": "HealthHub"
+      }
+    }
+  }
+}
