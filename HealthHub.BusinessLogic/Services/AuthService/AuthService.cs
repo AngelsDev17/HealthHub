@@ -14,7 +14,6 @@ using HealthHub.Domain.Models.AuthService;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 using System.Security.Claims;
-using ModelEnum = HealthHub.Domain.Enums.AuthService;
 
 namespace HealthHub.BusinessLogic.Services.AuthService
 {
@@ -54,7 +53,7 @@ namespace HealthHub.BusinessLogic.Services.AuthService
         {
             // Se obtiene el UserId del usuario.
 
-            var id = await _tokenizationDataService.TokenizeSystemValue(value: userToRegister.Identification.GetUserId());
+            var id = await _tokenizationDataService.TokenizeSystemValue(value: UserUtils.GetUserId(identification: userToRegister.Identification));
 
             // Valida con el UserId y el Email que el usuario no exista.
 
@@ -139,7 +138,7 @@ namespace HealthHub.BusinessLogic.Services.AuthService
 
             return await ConfigureBearerToken(
                 userInformation: userInformation,
-                role: authUser.Role);
+                role: authUser.Role.Id);
         }
 
         public async Task<string> SignInUser(UserToAuthDto userToAuth)
@@ -175,14 +174,14 @@ namespace HealthHub.BusinessLogic.Services.AuthService
 
             return await ConfigureBearerToken(
                 userInformation: userInformation,
-                role: existingUser.Role);
+                role: existingUser.Role.Id);
         }
 
         public async Task ResetPassword(IdentificationDto identification)
         {
             // Valida que el usuario ingresado exista.
 
-            var id = await _tokenizationDataService.TokenizeSystemValue(value: identification.GetUserId());
+            var id = await _tokenizationDataService.TokenizeSystemValue(value: UserUtils.GetUserId(identification: identification));
             var existingUser = await _authUserRepository.FindOneByIdAndStatusAsync(entityId: id);
 
             if (existingUser is null)
@@ -385,7 +384,7 @@ namespace HealthHub.BusinessLogic.Services.AuthService
 
         private Task<string> ConfigureBearerToken(
             UserInformationDto userInformation,
-            ModelEnum.Role role)
+            string role)
         {
             ClaimsIdentity claims = new();
 
@@ -393,7 +392,7 @@ namespace HealthHub.BusinessLogic.Services.AuthService
             claims.AddClaim(new("name", userInformation.Name));
             claims.AddClaim(new("surname", userInformation.Surname));
             claims.AddClaim(new("email", userInformation.Email));
-            claims.AddClaim(new(ClaimTypes.Role, role.ToString()));
+            claims.AddClaim(new(ClaimTypes.Role, role));
 
             var bearerToken = _jwtTokenSettings.GenerateBearerToken(claims: claims);
 

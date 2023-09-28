@@ -1,5 +1,4 @@
 ﻿using Angels.Packages.JwtToken.Services;
-using Angels.Packages.Logger.Services;
 using HealthHub.Application.Dtos.AuthService;
 using HealthHub.Application.Dtos.UserManagement;
 using HealthHub.Application.Interfaces.AuthService;
@@ -11,7 +10,7 @@ namespace HealthHub.WebApi.Controllers
 {
     [ApiExplorerSettings(GroupName = "profile-page")]
     [Tags("Administración del pefil")]
-    [Route("profile-service"), ApiController, Authorize(Roles = "User,Administrator")]
+    [Route("profile-service"), ApiController, Authorize(Roles = "User,255")]
     public class ProfileController : ControllerBase
     {
         private readonly ILogger<AuthController> _logger;

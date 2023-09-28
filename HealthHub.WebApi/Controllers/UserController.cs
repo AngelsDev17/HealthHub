@@ -1,13 +1,12 @@
-﻿using Angels.Packages.Logger.Services;
-using HealthHub.Application.Interfaces.UserManagement;
+﻿using HealthHub.Application.Interfaces.UserManagement;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HealthHub.WebApi.Controllers
 {
     [ApiExplorerSettings(GroupName = "management-page")]
-    [Tags("Administración de usuarios")]
-    [Route("user-management-service"), ApiController, Authorize(Roles = "Administrator")]
+    [Tags("Administración de clientes y profesionales")]
+    [Route("user-management-service"), ApiController, Authorize(Roles = "255")]
     public class UserController : ControllerBase
     {
         private readonly ILogger<UserController> _logger;

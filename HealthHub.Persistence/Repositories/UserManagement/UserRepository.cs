@@ -42,7 +42,11 @@ public class UserRepository : BaseRepository<User>, IUserRepository
 
         var updateDefinition = _updateDefinitionBuilder.Set(item => item.Name, user.Name)
                                                        .Set(item => item.Surname, user.Surname)
+                                                       .Set(item => item.Age, user.Age)
+                                                       .Set(item => item.Gender, user.Gender)
                                                        .Set(item => item.PhoneNumber, user.PhoneNumber)
+                                                       .Set(item => item.City, user.City)
+                                                       .Set(item => item.Locality, user.Locality)
                                                        .Set(item => item.Address, user.Address);
 
         return UpdateOneAsync(

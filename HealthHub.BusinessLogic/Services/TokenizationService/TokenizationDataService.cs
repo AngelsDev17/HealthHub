@@ -48,8 +48,11 @@ namespace HealthHub.BusinessLogic.Services.TokenizationService
             {
                 var (secretId, secret) = await _tokenizationManagementService.GenerateNewPasswordSecret();
 
-                currentSecret.Id = secretId;
-                currentSecret.Secret = secret;
+                currentSecret = new()
+                {
+                    Id = secretId,
+                    Secret = secret,
+                };
             }
 
             _logger.Debug("Se obtiene el secreto de password.");

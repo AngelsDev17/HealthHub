@@ -11,6 +11,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DbSettings__ConnectionString": "mongodb://localhost:27017/",
         "DbSettings__DatabaseName": "HealthHubDb",
+        "DbSettings__DomainListDatabaseName": "HealthHubDomainListsDb",
         "JwtTokenSettings__Issuer": "HealthHub",
         "JwtTokenSettings__Audience": "Users",
         "JwtTokenSettings__SecretKey": "KUHql1BwM52UUCPJXz9qbgABNpZicFSx",
@@ -32,7 +33,8 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DbSettings__ConnectionString": "mongodb://localhost:27017/",
-        "DbSettings__DatabaseName": "HealthHub",
+        "DbSettings__DatabaseName": "HealthHubDb",
+        "DbSettings__DomainListDatabaseName": "HealthHubDomainListsDb",
         "JwtTokenSettings__Issuer": "HealthHub",
         "JwtTokenSettings__Audience": "Users",
         "JwtTokenSettings__SecretKey": "KUHql1BwM52UUCPJXz9qbgABNpZicFSx",

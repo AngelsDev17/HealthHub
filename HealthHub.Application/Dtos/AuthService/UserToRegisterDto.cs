@@ -1,5 +1,4 @@
 ﻿using HealthHub.Application.Dtos.Commons;
-using HealthHub.Application.Enums.AuthService;
 using System.ComponentModel.DataAnnotations;
 
 namespace HealthHub.Application.Dtos.AuthService;
@@ -18,12 +17,15 @@ public class UserToRegisterDto
     [RegularExpression(@"^[A-Za-z ]+$", ErrorMessage = "El campo {0} no es valido.")]
     public string Surname { get; set; }
 
-    [Required(ErrorMessage = "El campo {0} no es valido.")]
-    public IdentificationDto Identification { get; set; }
+    [Range(12, 99, ErrorMessage = "El campo {0} no es valido.")]
+    public int Age { get; set; }
 
     [Required(ErrorMessage = "El campo {0} no es valido.")]
-    [RegularExpression(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", ErrorMessage = "El campo {0} no es valido.")]
-    public string Email { get; set; }
+    public IdentificationDto Identification { get; set; }
+    public JuridicalIdentificationDto JuridicalIdentification { get; set; } = null;
+
+    [Required(ErrorMessage = "El campo {0} no es valido.")]
+    public ReferencedValueDto Gender { get; set; }
 
     [Required(ErrorMessage = "El campo {0} no es valido.")]
     [MinLength(7, ErrorMessage = "El campo {0} no es valido.")]
@@ -31,9 +33,19 @@ public class UserToRegisterDto
     public string PhoneNumber { get; set; }
 
     [Required(ErrorMessage = "El campo {0} no es valido.")]
+    public ReferencedValueDto City { get; set; }
+
+    [Required(ErrorMessage = "El campo {0} no es valido.")]
+    public ReferencedValueDto Locality { get; set; }
+
+    [Required(ErrorMessage = "El campo {0} no es valido.")]
     [MinLength(5, ErrorMessage = "El campo {0} no es valido.")]
     [MaxLength(30, ErrorMessage = "El campo {0} no es valido.")]
     public string Address { get; set; }
+
+    [Required(ErrorMessage = "El campo {0} no es valido.")]
+    [RegularExpression(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", ErrorMessage = "El campo {0} no es valido.")]
+    public string Email { get; set; }
 
     [Required(ErrorMessage = "El campo {0} no es valido.")]
     [MinLength(10, ErrorMessage = "El campo {0} no es valido.")]
@@ -42,6 +54,5 @@ public class UserToRegisterDto
     public string Password { get; set; }
 
     [Required(ErrorMessage = "El campo {0} no es valido.")]
-    [EnumDataType(typeof(Role))]
-    public Role Role { get; set; }
+    public ReferencedValueDto Role { get; set; }
 }

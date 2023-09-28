@@ -2,8 +2,8 @@
 
 namespace HealthHub.Domain.Models.UserManagement;
 
-public class Identification
+public class JuridicalIdentification
 {
     public string Value { get; set; }
-    public ReferencedValue IdentificationType { get; set; }
+    public ReferencedValue JuridicalIdentificationType { get; set; }
 }

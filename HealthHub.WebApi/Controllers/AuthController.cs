@@ -1,5 +1,4 @@
-﻿using Angels.Packages.Logger.Services;
-using HealthHub.Application.Dtos.AuthService;
+﻿using HealthHub.Application.Dtos.AuthService;
 using HealthHub.Application.Dtos.Commons;
 using HealthHub.Application.Interfaces.AuthService;
 using Microsoft.AspNetCore.Mvc;

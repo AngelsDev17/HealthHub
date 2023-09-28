@@ -1,5 +1,4 @@
 ﻿using Angels.Packages.MongoDb.Models;
-using HealthHub.Domain.Enums.AuthService;
 
 namespace HealthHub.Domain.Models.AuthService;
 
@@ -12,5 +11,5 @@ public class AuthUser : AuditableEntity
     public Activation Activation { get; set; } = new();
     public ResetPassword ResetPassword { get; set; } = new();
     public UpdateEmail UpdateEmail { get; set; } = new();
-    public Role Role { get; set; }
+    public ReferencedValue Role { get; set; }
 }

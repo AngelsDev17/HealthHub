@@ -13,16 +13,25 @@ public class UserToRegisterExample : IExamplesProvider<UserToRegisterDto>
     {
         Name = "Miguel Angel",
         Surname = "Cuellar Arias",
+        Age = 19,
         Identification = new()
         {
             Value = "1021663015",
-            IdentificationType = IdentificationType.CC,
+            IdentificationType = new() { Id = "CC", Value = "Cédula de ciudadanía" },
         },
-        Email = "miguelangels2024@gmail.com",
+        JuridicalIdentification = new()
+        {
+            Value = "123456789-1",
+            JuridicalIdentificationType = new() { Id = "NIT", Value = "Número de identificación tributaria" },
+        },
+        Gender = new() { Id = "Male", Value = "Masculino" },
         PhoneNumber = "3168580636",
+        City = new() { Id = "001", Value = "Bogotá D.C." },
+        Locality = new() { Id = "004", ParentId = "001", Value = "San Cristobal" },
         Address = "Cll 43a sur #11c-26 este",
+        Email = "miguelangels2024@gmail.com",
         Password = "Pass@2468**",
-        Role = Role.User,
+        Role = new() { Id = "Client", Value = "Cliente" },
     };
 }
 public class UserActivationExample : IExamplesProvider<UserActivationDto>
@@ -48,7 +57,7 @@ public class IdentificationExample : IExamplesProvider<IdentificationDto>
     public IdentificationDto GetExamples() => new()
     {
         Value = "1021663015",
-        IdentificationType = IdentificationType.CC,
+        IdentificationType = new() { Id = "CC", Value = "Cédula de ciudadanía" },
     };
 }
 public class ResetPasswordExample : IExamplesProvider<ResetPasswordDto>
@@ -69,8 +78,12 @@ public class UserToUpdateExample : IExamplesProvider<UserToUpdateDto>
     {
         Name = "Miguel Angel",
         Surname = "Cuellar Arias",
+        Age = 22,
+        Gender = new() { Id = "Female", Value = "Femenino" },
         PhoneNumber = "3168580636",
-        Address = "Cll 43a sur #11c-26 este",
+        City = new() { Id = "001", Value = "Bogotá D.C." },
+        Locality = new() { Id = "010", ParentId = "001", Value = "Engativá" },
+        Address = "Cra 11 #79-54",
     };
 }
 public class UserToUpdateEmailExample : IExamplesProvider<UserToUpdateEmailDto>

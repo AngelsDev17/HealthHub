@@ -25,7 +25,7 @@ builder.Services.AddSwaggerGen(c =>
 
     c.SwaggerDoc(
         name: "management-page",
-        info: new OpenApiInfo { Title = "ADMINISTRACIÓN DE USUARIO", Version = "v1" });
+        info: new OpenApiInfo { Title = "ADMINISTRACIÓN DE CLIENTES Y PROFESIONALES", Version = "v1" });
 
     c.SwaggerDoc(
         name: "profile-page",
@@ -37,7 +37,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddSwaggerExamplesFromAssemblies(assemblies: Assembly.GetEntryAssembly());
 builder.Services.AddJwtTokenExtensions(configuration: builder.Configuration);
 
-builder.Host.AddLoggingExtensions(loggingLevel: LoggingLevel.Information);
+builder.Host.AddLoggingExtensions("HealtHub");
 
 
 // App
@@ -55,7 +55,7 @@ if (app.Environment.IsDevelopment())
 
         c.SwaggerEndpoint(
             url: "/swagger/management-page/swagger.json",
-            name: "Administración de usuarios y pacientes");
+            name: "Administración de clientes y profesionales");
 
         c.SwaggerEndpoint(
             url: "/swagger/profile-page/swagger.json",
