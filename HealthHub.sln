@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HealthHub.BusinessLogic", "
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{FB14A019-F950-46A9-AFB4-3FCDEF4F79E8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HealthHub.Test", "HealthHub.Test\HealthHub.Test.csproj", "{3D9F0D21-92FA-4481-A44C-7D4A5FC64B70}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HealthHub.Test", "HealthHub.Test\HealthHub.Test.csproj", "{3D9F0D21-92FA-4481-A44C-7D4A5FC64B70}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

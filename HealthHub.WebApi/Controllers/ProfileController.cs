@@ -6,88 +6,84 @@ using HealthHub.Application.Interfaces.UserManagement;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace HealthHub.WebApi.Controllers
+namespace HealthHub.WebApi.Controllers;
+
+[ApiExplorerSettings(GroupName = "profile-page")]
+[Tags("Administración del pefil")]
+[Route("profile-service"), ApiController, Authorize(Roles = "User,255")]
+public class ProfileController : ControllerBase
 {
-    [ApiExplorerSettings(GroupName = "profile-page")]
-    [Tags("Administración del pefil")]
-    [Route("profile-service"), ApiController, Authorize(Roles = "User,255")]
-    public class ProfileController : ControllerBase
+    private readonly IAuthService _authService;
+    private readonly IUserManagementService _userManagementService;
+
+    public ProfileController(
+        IAuthService authService,
+        IUserManagementService userManagementService)
     {
-        private readonly ILogger<AuthController> _logger;
-        private readonly IAuthService _authService;
-        private readonly IUserManagementService _userManagementService;
+        _authService = authService;
+        _userManagementService = userManagementService;
+    }
 
-        public ProfileController(
-            ILogger<AuthController> logger,
-            IAuthService authService,
-            IUserManagementService userManagementService)
+
+    [HttpPut("update-profile-data")]
+    public async Task<IActionResult> UpdateProfileData(UserToUpdateDto userToUpdate)
+    {
+        try
         {
-            _logger = logger;
-            _authService = authService;
-            _userManagementService = userManagementService;
+            userToUpdate.Id = Request.GetUserIdFromBearerToken();
+
+            await _userManagementService.UpdateProfileData(userToUpdate: userToUpdate);
+            return Ok();
         }
-
-
-        [HttpPut("update-profile-data")]
-        public async Task<IActionResult> UpdateProfileData(UserToUpdateDto userToUpdate)
+        catch (Exception ex)
         {
-            try
-            {
-                userToUpdate.Id = Request.GetUserIdFromBearerToken();
-
-                await _userManagementService.UpdateProfileData(userToUpdate: userToUpdate);
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return BadRequest(ex.Message);
         }
+    }
 
-        [HttpPut("update-email")]
-        public async Task<IActionResult> UpdateEmail(UserToUpdateEmailDto userToUpdateEmail)
+    [HttpPut("update-email")]
+    public async Task<IActionResult> UpdateEmail(UserToUpdateEmailDto userToUpdateEmail)
+    {
+        try
         {
-            try
-            {
-                userToUpdateEmail.Id = Request.GetUserIdFromBearerToken();
+            userToUpdateEmail.Id = Request.GetUserIdFromBearerToken();
 
-                await _authService.UpdateEmail(userToUpdateEmail: userToUpdateEmail);
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            await _authService.UpdateEmail(userToUpdateEmail: userToUpdateEmail);
+            return Ok();
         }
-
-        [HttpPost("confirm-update-email")]
-        public async Task<IActionResult> ConfirmUpdateEmail(UpdateEmailDto resetPassword)
+        catch (Exception ex)
         {
-            try
-            {
-                await _authService.ConfirmUpdateEmail(resetPassword: resetPassword);
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return BadRequest(ex.Message);
         }
+    }
 
-        [HttpPost("update-password")]
-        public async Task<IActionResult> UpdatePassword(UserToUpdatePasswordDto userToUpdatePassword)
+    [HttpPost("confirm-update-email")]
+    public async Task<IActionResult> ConfirmUpdateEmail(UpdateEmailDto resetPassword)
+    {
+        try
         {
-            try
-            {
-                userToUpdatePassword.Id = Request.GetUserIdFromBearerToken();
+            await _authService.ConfirmUpdateEmail(resetPassword: resetPassword);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 
-                await _authService.UpdatePassword(userToUpdatePassword: userToUpdatePassword);
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+    [HttpPost("update-password")]
+    public async Task<IActionResult> UpdatePassword(UserToUpdatePasswordDto userToUpdatePassword)
+    {
+        try
+        {
+            userToUpdatePassword.Id = Request.GetUserIdFromBearerToken();
+
+            await _authService.UpdatePassword(userToUpdatePassword: userToUpdatePassword);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
         }
     }
 }

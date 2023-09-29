@@ -22,7 +22,6 @@ public class UserToRegisterDto
 
     [Required(ErrorMessage = "El campo {0} no es valido.")]
     public IdentificationDto Identification { get; set; }
-    public JuridicalIdentificationDto JuridicalIdentification { get; set; } = null;
 
     [Required(ErrorMessage = "El campo {0} no es valido.")]
     public ReferencedValueDto Gender { get; set; }

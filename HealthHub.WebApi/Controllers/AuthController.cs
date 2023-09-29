@@ -3,93 +3,88 @@ using HealthHub.Application.Dtos.Commons;
 using HealthHub.Application.Interfaces.AuthService;
 using Microsoft.AspNetCore.Mvc;
 
-namespace HealthHub.WebApi.Controllers
+namespace HealthHub.WebApi.Controllers;
+
+[ApiExplorerSettings(GroupName = "auth-page")]
+[Tags("Portal de usuarios")]
+[Route("auth-service"), ApiController]
+public class AuthController : ControllerBase
 {
-    [ApiExplorerSettings(GroupName = "auth-page")]
-    [Tags("Portal de usuarios")]
-    [Route("auth-service"), ApiController]
-    public class AuthController : ControllerBase
+    private readonly IAuthService _authService;
+
+    public AuthController(IAuthService authService)
     {
-        private readonly ILogger<AuthController> _logger;
-        private readonly IAuthService _authService;
+        _authService = authService;
+    }
 
-        public AuthController(
-            ILogger<AuthController> logger,
-            IAuthService authService)
+
+    [HttpPost("register-user")]
+    public async Task<IActionResult> RegisterUser(UserToRegisterDto userToRegister)
+    {
+        try
         {
-            _logger = logger;
-            _authService = authService;
+            await _authService.RegisterUser(userToRegister: userToRegister);
+            return Ok();
         }
-
-
-        [HttpPost("register-user")]
-        public async Task<IActionResult> RegisterUser(UserToRegisterDto userToRegister)
+        catch (Exception ex)
         {
-            try
-            {
-                await _authService.RegisterUser(userToRegister: userToRegister);
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return BadRequest(ex.Message);
         }
+    }
 
-        [HttpPost("user-activation")]
-        public async Task<IActionResult> UserActivation(UserActivationDto userActivation)
+    [HttpPost("user-activation")]
+    public async Task<IActionResult> UserActivation(UserActivationDto userActivation)
+    {
+        try
         {
-            try
-            {
-                var bearerToken = await _authService.UserActivation(userActivation: userActivation);
-                return Ok(bearerToken);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var bearerToken = await _authService.UserActivation(userActivation: userActivation);
+            return Ok(bearerToken);
         }
-
-        [HttpPost("sign-in-user")]
-        public async Task<IActionResult> SignInUser(UserToAuthDto userToAuth)
+        catch (Exception ex)
         {
-            try
-            {
-                var bearerToken = await _authService.SignInUser(userToAuth: userToAuth);
-                return Ok(bearerToken);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return BadRequest(ex.Message);
         }
+    }
 
-        [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword(IdentificationDto identification)
+    [HttpPost("sign-in-user")]
+    public async Task<IActionResult> SignInUser(UserToAuthDto userToAuth)
+    {
+        try
         {
-            try
-            {
-                await _authService.ResetPassword(identification: identification);
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var bearerToken = await _authService.SignInUser(userToAuth: userToAuth);
+            return Ok(bearerToken);
         }
-
-        [HttpPost("confirm-reset-password")]
-        public async Task<IActionResult> ConfirmResetPassword(ResetPasswordDto resetPassword)
+        catch (Exception ex)
         {
-            try
-            {
-                await _authService.ConfirmResetPassword(resetPassword: resetPassword);
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(IdentificationDto identification)
+    {
+        try
+        {
+            await _authService.ResetPassword(identification: identification);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("confirm-reset-password")]
+    public async Task<IActionResult> ConfirmResetPassword(ResetPasswordDto resetPassword)
+    {
+        try
+        {
+            await _authService.ConfirmResetPassword(resetPassword: resetPassword);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
         }
     }
 }

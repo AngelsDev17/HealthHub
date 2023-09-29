@@ -15,390 +15,389 @@ using Microsoft.Extensions.Logging;
 using MimeKit;
 using System.Security.Claims;
 
-namespace HealthHub.BusinessLogic.Services.AuthService
+namespace HealthHub.BusinessLogic.Services.AuthService;
+
+public class AuthService : IAuthService
 {
-    public class AuthService : IAuthService
+    private readonly JwtTokenSettings _jwtTokenSettings;
+
+    private readonly ILogger<AuthService> _logger;
+    private readonly ITokenizationDataService _tokenizationDataService;
+    private readonly IUserManagementService _userManagementService;
+    private readonly IAuthUserRepository _authUserRepository;
+    private readonly IMapper _mapper;
+
+    private readonly Random _random;
+
+    public AuthService(
+        JwtTokenSettings jwtTokenSettings,
+        ILogger<AuthService> logger,
+        ITokenizationDataService tokenizationDataService,
+        IUserManagementService userManagementService,
+        IAuthUserRepository authUserRepository,
+        IMapper mapper)
     {
-        private readonly JwtTokenSettings _jwtTokenSettings;
+        _jwtTokenSettings = jwtTokenSettings;
 
-        private readonly ILogger<AuthService> _logger;
-        private readonly ITokenizationDataService _tokenizationDataService;
-        private readonly IUserManagementService _userManagementService;
-        private readonly IAuthUserRepository _authUserRepository;
-        private readonly IMapper _mapper;
+        _logger = logger;
+        _tokenizationDataService = tokenizationDataService;
+        _userManagementService = userManagementService;
+        _authUserRepository = authUserRepository;
+        _mapper = mapper;
 
-        private readonly Random _random;
+        _random = new Random();
+    }
 
-        public AuthService(
-            JwtTokenSettings jwtTokenSettings,
-            ILogger<AuthService> logger,
-            ITokenizationDataService tokenizationDataService,
-            IUserManagementService userManagementService,
-            IAuthUserRepository authUserRepository,
-            IMapper mapper)
+
+    public async Task RegisterUser(UserToRegisterDto userToRegister)
+    {
+        // Se obtiene el UserId del usuario.
+
+        var id = await _tokenizationDataService.TokenizeSystemValue(value: UserUtils.GetUserId(identification: userToRegister.Identification));
+
+        // Valida con el UserId y el Email que el usuario no exista.
+
+        var existingUser = await _authUserRepository.FindOneByIdOrEmail(
+            id: id,
+            email: userToRegister.Email);
+
+        if (existingUser is not null)
+            _logger.Warning(
+                message: $"El usuario {id} fue previamente registrado en el sistema.",
+                exception: new InvalidDataException("Usuario previamente registrado en el sistema."));
+
+        var authUser = _mapper.Map<AuthUser>(userToRegister);
+
+        // Se crea el usuario en el servicio UserManagement.
+
+        var userId = await _userManagementService.RegisterNewUser(
+            userInformation: _mapper.Map<UserInformationDto>(userToRegister));
+
+        authUser.Id = id;
+        authUser.UserId = userId;
+
+        // Genera un token basado en la contraseña y se asignan los valores.
+
+        var tokenizedPassword = await _tokenizationDataService.TokenizePassword(value: userToRegister.Password);
+
+        authUser.Password = tokenizedPassword.TokenizedValue;
+        authUser.SecretId = tokenizedPassword.SecretId;
+
+        await _authUserRepository.InsertOneAsync(entity: authUser);
+
+        // Se envia el correo de activacion.
+
+        var userEmails = new List<string> { userToRegister.Email };
+        var subject = "Activa tu cuenta!";
+
+        var bodyBuilder = new BodyBuilder
         {
-            _jwtTokenSettings = jwtTokenSettings;
+            HtmlBody = $"Para activar tu cuenta ingresa en el siguiente <a href=\"https://localhost:17568?aid={authUser.Activation.ActivationId}&uid={authUser.Id}\">enlace</a> e ingresa el codigo <b>{authUser.Activation.ActivationCode}</b>..."
+        };
 
-            _logger = logger;
-            _tokenizationDataService = tokenizationDataService;
-            _userManagementService = userManagementService;
-            _authUserRepository = authUserRepository;
-            _mapper = mapper;
+        await EmailUtils.SendEmailToUsers(
+            userEmails: userEmails,
+            subject: subject,
+            bodyBuilder: bodyBuilder);
 
-            _random = new Random();
-        }
+        _logger.Information($"Se termina el proceso de registro del usuario {id} y se envia su correo de activacion.");
+    }
+    public async Task<string> UserActivation(UserActivationDto userActivation)
+    {
+        // Se busca el usuario y se valida el ActivationId.
 
+        var authUser = await _authUserRepository.FindOneByIdAndActivationIdAndActivationCodeAndStatus(
+            id: userActivation.Id,
+            activationId: userActivation.ActivationId,
+            activationCode: userActivation.ActivationCode);
 
-        public async Task RegisterUser(UserToRegisterDto userToRegister)
-        {
-            // Se obtiene el UserId del usuario.
+        if (authUser is null)
+            _logger.Warning(
+                message: $"El codigo del usurio {userActivation.Id} no es correcto.",
+                exception: new InvalidDataException("El codigo no es correcto."));
 
-            var id = await _tokenizationDataService.TokenizeSystemValue(value: UserUtils.GetUserId(identification: userToRegister.Identification));
+        // Se activa el usuario en la DB y en el servicio UserManagement.
 
-            // Valida con el UserId y el Email que el usuario no exista.
+        await _authUserRepository.ActivateUserByIdAndStatus(id: authUser.Id);
 
-            var existingUser = await _authUserRepository.FindOneByIdOrEmail(
-                id: id,
-                email: userToRegister.Email);
-
-            if (existingUser is not null)
-                _logger.Warning(
-                    message: $"El usuario {id} fue previamente registrado en el sistema.",
-                    exception: new InvalidDataException("Usuario previamente registrado en el sistema."));
-
-            var authUser = _mapper.Map<AuthUser>(userToRegister);
-
-            // Se crea el usuario en el servicio UserManagement.
-
-            var userId = await _userManagementService.RegisterNewUser(
-                userInformation: _mapper.Map<UserInformationDto>(userToRegister));
-
-            authUser.Id = id;
-            authUser.UserId = userId;
-
-            // Genera un token basado en la contraseña y se asignan los valores.
-
-            var tokenizedPassword = await _tokenizationDataService.TokenizePassword(value: userToRegister.Password);
-
-            authUser.Password = tokenizedPassword.TokenizedValue;
-            authUser.SecretId = tokenizedPassword.SecretId;
-
-            await _authUserRepository.InsertOneAsync(entity: authUser);
-
-            // Se envia el correo de activacion.
-
-            var userEmails = new List<string> { userToRegister.Email };
-            var subject = "Activa tu cuenta!";
-
-            var bodyBuilder = new BodyBuilder
+        await _userManagementService.UserActivation(
+            basicUserActivation: new()
             {
-                HtmlBody = $"Para activar tu cuenta ingresa en el siguiente <a href=\"https://localhost:17568?aid={authUser.Activation.ActivationId}&uid={authUser.Id}\">enlace</a> e ingresa el codigo <b>{authUser.Activation.ActivationCode}</b>..."
-            };
+                UserId = authUser.UserId,
+                ActivationDate = DateTime.Now,
+                ActivationMethod = userActivation.ActivationMethod,
+            });
 
-            await EmailUtils.SendEmailToUsers(
-                userEmails: userEmails,
-                subject: subject,
-                bodyBuilder: bodyBuilder);
+        _logger.Information($"Se realiza la activacion del usuario {userActivation.Id} en el sistema.");
 
-            _logger.Information($"Se termina el proceso de registro del usuario {id} y se envia su correo de activacion.");
-        }
-        public async Task<string> UserActivation(UserActivationDto userActivation)
+        // Se obtiene la informacion del usuario.
+
+        var userInformation = await _userManagementService.GetUserInformationById(userId: authUser.UserId);
+
+        // Se retorna el bearerToken del usuario.
+
+        return await ConfigureBearerToken(
+            userInformation: userInformation,
+            role: authUser.Role.Id);
+    }
+
+    public async Task<string> SignInUser(UserToAuthDto userToAuth)
+    {
+        // Valida que el Email ingresado sea correcto.
+
+        var existingUser = await _authUserRepository.FindOneByEmailAndStatus(email: userToAuth.Email);
+
+        if (existingUser is null)
+            _logger.Warning(
+                message: $"Las credenciales del usuario {userToAuth.Email} son incorrectas.",
+                exception: new InvalidDataException("Las credenciales son incorrectas."));
+
+        // Valida que la Contraseña sea correcta.
+
+        var tokenizedPassword = await _tokenizationDataService.TokenizeExistingPassword(
+                                    tokenizedValue: new()
+                                    {
+                                        TokenizedValue = userToAuth.Password,
+                                        SecretId = existingUser.SecretId
+                                    });
+
+        if (!tokenizedPassword.Equals(existingUser.Password))
+            _logger.Warning(
+                message: $"Las credenciales del usuario {userToAuth.Email} son incorrectas.",
+                exception: new InvalidDataException("Las credenciales son incorrectas."));
+
+        // Se obtiene la informacion del usuario.
+
+        var userInformation = await _userManagementService.GetUserInformationById(userId: existingUser.UserId);
+
+        // Se retorna el bearerToken del usuario.
+
+        return await ConfigureBearerToken(
+            userInformation: userInformation,
+            role: existingUser.Role.Id);
+    }
+
+    public async Task ResetPassword(IdentificationDto identification)
+    {
+        // Valida que el usuario ingresado exista.
+
+        var id = await _tokenizationDataService.TokenizeSystemValue(value: UserUtils.GetUserId(identification: identification));
+        var existingUser = await _authUserRepository.FindOneByIdAndStatusAsync(entityId: id);
+
+        if (existingUser is null)
+            _logger.Warning(
+                message: $"Las credenciales del usuario {identification.Value} son incorrectas.",
+                exception: new InvalidDataException("Las credenciales son incorrectas."));
+
+        // Se genera el codigo para restablecer la contraseña.
+
+        var resetPasswordRecord = new ResetPassword
         {
-            // Se busca el usuario y se valida el ActivationId.
+            ResetPasswordId = Guid.NewGuid().ToString(),
+            ResetPasswordCode = _random.Next(100000, 999999),
+            ExpirationDate = DateTime.Now.AddDays(1)
+        };
 
-            var authUser = await _authUserRepository.FindOneByIdAndActivationIdAndActivationCodeAndStatus(
-                id: userActivation.Id,
-                activationId: userActivation.ActivationId,
-                activationCode: userActivation.ActivationCode);
+        await _authUserRepository.UpdateResetPasswordByIdAndStatus(
+            id: existingUser.Id,
+            resetPasswordRecord: resetPasswordRecord);
 
-            if (authUser is null)
-                _logger.Warning(
-                    message: $"El codigo del usurio {userActivation.Id} no es correcto.",
-                    exception: new InvalidDataException("El codigo no es correcto."));
+        // Se envia el correo para restablecer la contraseña.
 
-            // Se activa el usuario en la DB y en el servicio UserManagement.
+        var userEmails = new List<string> { existingUser.Email };
+        var subject = "Restablece tu contraseña!";
 
-            await _authUserRepository.ActivateUserByIdAndStatus(id: authUser.Id);
-
-            await _userManagementService.UserActivation(
-                basicUserActivation: new()
-                {
-                    UserId = authUser.UserId,
-                    ActivationDate = DateTime.Now,
-                    ActivationMethod = userActivation.ActivationMethod,
-                });
-
-            _logger.Information($"Se realiza la activacion del usuario {userActivation.Id} en el sistema.");
-
-            // Se obtiene la informacion del usuario.
-
-            var userInformation = await _userManagementService.GetUserInformationById(userId: authUser.UserId);
-
-            // Se retorna el bearerToken del usuario.
-
-            return await ConfigureBearerToken(
-                userInformation: userInformation,
-                role: authUser.Role.Id);
-        }
-
-        public async Task<string> SignInUser(UserToAuthDto userToAuth)
+        var bodyBuilder = new BodyBuilder
         {
-            // Valida que el Email ingresado sea correcto.
+            HtmlBody = $"Para restablecer tu contraseña ingresa en el siguiente <a href=\"https://localhost:17568?rpid={resetPasswordRecord.ResetPasswordId}&uid={existingUser.Id}\">enlace</a> e ingresa el codigo <b>{resetPasswordRecord.ResetPasswordCode}</b>..."
+        };
 
-            var existingUser = await _authUserRepository.FindOneByEmailAndStatus(email: userToAuth.Email);
+        await EmailUtils.SendEmailToUsers(
+            userEmails: userEmails,
+            subject: subject,
+            bodyBuilder: bodyBuilder);
 
-            if (existingUser is null)
-                _logger.Warning(
-                    message: $"Las credenciales del usuario {userToAuth.Email} son incorrectas.",
-                    exception: new InvalidDataException("Las credenciales son incorrectas."));
+        _logger.Information($"Se empieza el proceso para restablecer la contraseña del usuario {id}.");
+    }
+    public async Task ConfirmResetPassword(ResetPasswordDto resetPassword)
+    {
+        // Valida que el usuario ingresado exista.
 
-            // Valida que la Contraseña sea correcta.
+        var existingUser = await _authUserRepository.FindOneByIdAndResetPasswordIdAndCodeAndStatus(
+            id: resetPassword.Id,
+            resetPasswordId: resetPassword.ResetPasswordId,
+            resetPasswordCode: resetPassword.ResetPasswordCode);
 
-            var tokenizedPassword = await _tokenizationDataService.TokenizeExistingPassword(
-                                        tokenizedValue: new()
-                                        {
-                                            TokenizedValue = userToAuth.Password,
-                                            SecretId = existingUser.SecretId
-                                        });
+        if (existingUser is null)
+            _logger.Warning(
+                message: $"El codigo del usuario {resetPassword.Id} no es correcto.",
+                exception: new InvalidDataException("El codigo no es correcto."));
 
-            if (!tokenizedPassword.Equals(existingUser.Password))
-                _logger.Warning(
-                    message: $"Las credenciales del usuario {userToAuth.Email} son incorrectas.",
-                    exception: new InvalidDataException("Las credenciales son incorrectas."));
+        if (existingUser.ResetPassword.ExpirationDate < resetPassword.ResetPasswordDate)
+            _logger.Warning(
+                message: $"El codigo del usuario {resetPassword.Id} ya ha expirado.",
+                exception: new InvalidDataException("El codigo ingresado ya ha expirado, por favor genere uno nuevo."));
 
-            // Se obtiene la informacion del usuario.
+        // Genera un token basado en la contraseña.
 
-            var userInformation = await _userManagementService.GetUserInformationById(userId: existingUser.UserId);
+        var tokenizedPassword = await _tokenizationDataService.TokenizePassword(value: resetPassword.NewPassword);
 
-            // Se retorna el bearerToken del usuario.
+        // Se actualiza la contraseña en la BD.
 
-            return await ConfigureBearerToken(
-                userInformation: userInformation,
-                role: existingUser.Role.Id);
-        }
+        await _authUserRepository.UpdatePasswordAndSecretIdByIdAndStatus(
+            id: resetPassword.Id,
+            newPassword: tokenizedPassword.TokenizedValue,
+            secretId: tokenizedPassword.SecretId);
 
-        public async Task ResetPassword(IdentificationDto identification)
+        _logger.Information($"Se restablece correctamente la contraseña del usuario {existingUser.Id}.");
+    }
+
+    public async Task UpdateEmail(UserToUpdateEmailDto userToUpdateEmail)
+    {
+        // Valida que el Id ingresado sea correcto.
+
+        var existingUser = await _authUserRepository.FindOneByUserIdAndStatus(userId: userToUpdateEmail.Id);
+
+        if (existingUser is null)
+            _logger.Warning(
+                message: $"El usuario con id {userToUpdateEmail.Id} no se encuentra activo en el sistema.",
+                exception: new InvalidDataException("El usuario no se encuentra activo en el sistema."));
+
+        // Se genera el codigo para actualizar el email.
+
+        var updateEmail = new UpdateEmail
         {
-            // Valida que el usuario ingresado exista.
+            NewEmail = userToUpdateEmail.Email,
+            UpdateEmailId = Guid.NewGuid().ToString(),
+            UpdateEmailCode = _random.Next(100000, 999999),
+            ExpirationDate = DateTime.Now.AddDays(1)
+        };
 
-            var id = await _tokenizationDataService.TokenizeSystemValue(value: UserUtils.GetUserId(identification: identification));
-            var existingUser = await _authUserRepository.FindOneByIdAndStatusAsync(entityId: id);
+        await _authUserRepository.UpdateEmailIdAndCodeAndEmailByIdAndStatus(
+            id: existingUser.Id,
+            updateEmail: updateEmail);
 
-            if (existingUser is null)
-                _logger.Warning(
-                    message: $"Las credenciales del usuario {identification.Value} son incorrectas.",
-                    exception: new InvalidDataException("Las credenciales son incorrectas."));
+        // Se envia el correo para restablecer el email.
 
-            // Se genera el codigo para restablecer la contraseña.
+        var userEmails = new List<string> { existingUser.Email };
+        var subject = "Actualiza tu email!";
 
-            var resetPasswordRecord = new ResetPassword
-            {
-                ResetPasswordId = Guid.NewGuid().ToString(),
-                ResetPasswordCode = _random.Next(100000, 999999),
-                ExpirationDate = DateTime.Now.AddDays(1)
-            };
-
-            await _authUserRepository.UpdateResetPasswordByIdAndStatus(
-                id: existingUser.Id,
-                resetPasswordRecord: resetPasswordRecord);
-
-            // Se envia el correo para restablecer la contraseña.
-
-            var userEmails = new List<string> { existingUser.Email };
-            var subject = "Restablece tu contraseña!";
-
-            var bodyBuilder = new BodyBuilder
-            {
-                HtmlBody = $"Para restablecer tu contraseña ingresa en el siguiente <a href=\"https://localhost:17568?rpid={resetPasswordRecord.ResetPasswordId}&uid={existingUser.Id}\">enlace</a> e ingresa el codigo <b>{resetPasswordRecord.ResetPasswordCode}</b>..."
-            };
-
-            await EmailUtils.SendEmailToUsers(
-                userEmails: userEmails,
-                subject: subject,
-                bodyBuilder: bodyBuilder);
-
-            _logger.Information($"Se empieza el proceso para restablecer la contraseña del usuario {id}.");
-        }
-        public async Task ConfirmResetPassword(ResetPasswordDto resetPassword)
+        var bodyBuilder = new BodyBuilder
         {
-            // Valida que el usuario ingresado exista.
+            HtmlBody = $"Para actualizar el email de tu cuenta a la nueva direccion <b>{userToUpdateEmail.Email}</b> ingresa en el siguiente <a href=\"https://localhost:17568?rpid={updateEmail.UpdateEmailId}&uid={existingUser.Id}&ne={updateEmail.NewEmail}\">enlace</a> e ingresa el codigo <b>{updateEmail.UpdateEmailCode}</b>..."
+        };
 
-            var existingUser = await _authUserRepository.FindOneByIdAndResetPasswordIdAndCodeAndStatus(
-                id: resetPassword.Id,
-                resetPasswordId: resetPassword.ResetPasswordId,
-                resetPasswordCode: resetPassword.ResetPasswordCode);
+        await EmailUtils.SendEmailToUsers(
+            userEmails: userEmails,
+            subject: subject,
+            bodyBuilder: bodyBuilder);
 
-            if (existingUser is null)
-                _logger.Warning(
-                    message: $"El codigo del usuario {resetPassword.Id} no es correcto.",
-                    exception: new InvalidDataException("El codigo no es correcto."));
+        _logger.Information($"Se empieza el proceso para actualizar la email del usuario {existingUser.Id}.");
+    }
+    public async Task ConfirmUpdateEmail(UpdateEmailDto resetPassword)
+    {
+        // Valida que el usuario ingresado exista.
 
-            if (existingUser.ResetPassword.ExpirationDate < resetPassword.ResetPasswordDate)
-                _logger.Warning(
-                    message: $"El codigo del usuario {resetPassword.Id} ya ha expirado.",
-                    exception: new InvalidDataException("El codigo ingresado ya ha expirado, por favor genere uno nuevo."));
+        var existingUser = await _authUserRepository.FindOneByIdAndUpdateEmailIdAndCodeAndEmailAndDateAndStatus(
+            id: resetPassword.Id,
+            newEmail: resetPassword.NewEmail,
+            updateEmailId: resetPassword.UpdateEmailId,
+            updateEmailCode: resetPassword.UpdateEmailCode);
 
-            // Genera un token basado en la contraseña.
+        if (existingUser is null)
+            _logger.Warning(
+                message: $"El codigo del usuario {resetPassword.Id} no es correcto.",
+                exception: new InvalidDataException("El codigo no es correcto."));
 
-            var tokenizedPassword = await _tokenizationDataService.TokenizePassword(value: resetPassword.NewPassword);
+        if (existingUser.ResetPassword.ExpirationDate < resetPassword.UpdateEmailDate)
+            _logger.Warning(
+                message: $"El codigo del usuario {resetPassword.Id} ya ha expirado.",
+                exception: new InvalidDataException("El codigo ingresado ya ha expirado, por favor genere uno nuevo."));
 
-            // Se actualiza la contraseña en la BD.
+        // Se actualiza el email en el servicio UserManagement.
 
-            await _authUserRepository.UpdatePasswordAndSecretIdByIdAndStatus(
-                id: resetPassword.Id,
-                newPassword: tokenizedPassword.TokenizedValue,
-                secretId: tokenizedPassword.SecretId);
+        await _userManagementService.UpdateProfileEmail(
+            userId: existingUser.UserId,
+            email: resetPassword.NewEmail);
 
-            _logger.Information($"Se restablece correctamente la contraseña del usuario {existingUser.Id}.");
-        }
+        // Se actualiza el email en la BD.
 
-        public async Task UpdateEmail(UserToUpdateEmailDto userToUpdateEmail)
+        await _authUserRepository.UpdateEmailByIdAndStatus(
+            id: resetPassword.Id,
+            email: resetPassword.NewEmail);
+
+        // Se envia el correo para confirmar la actualizacion.
+
+        var userEmails = new List<string> { existingUser.Email, resetPassword.NewEmail };
+        var subject = "Email actualizado exitosamente!";
+
+        var bodyBuilder = new BodyBuilder
         {
-            // Valida que el Id ingresado sea correcto.
+            HtmlBody = $"Buen día. Por medio de este mensaje se desea informar que la direccion de correo <b>{resetPassword.NewEmail}</b> ha sido actualizada exitosamente."
+        };
 
-            var existingUser = await _authUserRepository.FindOneByUserIdAndStatus(userId: userToUpdateEmail.Id);
+        await EmailUtils.SendEmailToUsers(
+            userEmails: userEmails,
+            subject: subject,
+            bodyBuilder: bodyBuilder);
 
-            if (existingUser is null)
-                _logger.Warning(
-                    message: $"El usuario con id {userToUpdateEmail.Id} no se encuentra activo en el sistema.",
-                    exception: new InvalidDataException("El usuario no se encuentra activo en el sistema."));
+        _logger.Information($"Se actualiza correctamente el email del usuario {existingUser.Id}.");
+    }
+    public async Task UpdatePassword(UserToUpdatePasswordDto userToUpdatePassword)
+    {
+        // Valida que el Id ingresado sea correcto.
 
-            // Se genera el codigo para actualizar el email.
+        var existingUser = await _authUserRepository.FindOneByUserIdAndStatus(userId: userToUpdatePassword.Id);
 
-            var updateEmail = new UpdateEmail
-            {
-                NewEmail = userToUpdateEmail.Email,
-                UpdateEmailId = Guid.NewGuid().ToString(),
-                UpdateEmailCode = _random.Next(100000, 999999),
-                ExpirationDate = DateTime.Now.AddDays(1)
-            };
+        if (existingUser is null)
+            _logger.Warning(
+                message: $"El usuario con id {userToUpdatePassword.Id} no se encuentra activo en el sistema.",
+                exception: new InvalidDataException("El usuario no se encuentra activo en el sistema."));
 
-            await _authUserRepository.UpdateEmailIdAndCodeAndEmailByIdAndStatus(
-                id: existingUser.Id,
-                updateEmail: updateEmail);
+        // Valida que la contraseña sea correcta.
 
-            // Se envia el correo para restablecer el email.
+        var tokenizedPassword = await _tokenizationDataService.TokenizeExistingPassword(
+                                    tokenizedValue: new()
+                                    {
+                                        TokenizedValue = userToUpdatePassword.CurrentPassword,
+                                        SecretId = existingUser.SecretId
+                                    });
 
-            var userEmails = new List<string> { existingUser.Email };
-            var subject = "Actualiza tu email!";
+        if (!tokenizedPassword.Equals(existingUser.Password))
+            _logger.Warning(
+                message: $"La contraseña es incorrecta.",
+                exception: new InvalidDataException("La contraseña es incorrecta."));
 
-            var bodyBuilder = new BodyBuilder
-            {
-                HtmlBody = $"Para actualizar el email de tu cuenta a la nueva direccion <b>{userToUpdateEmail.Email}</b> ingresa en el siguiente <a href=\"https://localhost:17568?rpid={updateEmail.UpdateEmailId}&uid={existingUser.Id}&ne={updateEmail.NewEmail}\">enlace</a> e ingresa el codigo <b>{updateEmail.UpdateEmailCode}</b>..."
-            };
+        // Se tokeniza la nueva contraseña.
 
-            await EmailUtils.SendEmailToUsers(
-                userEmails: userEmails,
-                subject: subject,
-                bodyBuilder: bodyBuilder);
+        var newTokenizedPassword = await _tokenizationDataService.TokenizePassword(value: userToUpdatePassword.NewPassword);
 
-            _logger.Information($"Se empieza el proceso para actualizar la email del usuario {existingUser.Id}.");
-        }
-        public async Task ConfirmUpdateEmail(UpdateEmailDto resetPassword)
-        {
-            // Valida que el usuario ingresado exista.
+        // Se actualiza la contraseña en la base de datos.
 
-            var existingUser = await _authUserRepository.FindOneByIdAndUpdateEmailIdAndCodeAndEmailAndDateAndStatus(
-                id: resetPassword.Id,
-                newEmail: resetPassword.NewEmail,
-                updateEmailId: resetPassword.UpdateEmailId,
-                updateEmailCode: resetPassword.UpdateEmailCode);
+        await _authUserRepository.UpdatePasswordAndSecretIdByIdAndStatus(
+            id: existingUser.Id,
+            newPassword: newTokenizedPassword.TokenizedValue,
+            secretId: newTokenizedPassword.SecretId);
 
-            if (existingUser is null)
-                _logger.Warning(
-                    message: $"El codigo del usuario {resetPassword.Id} no es correcto.",
-                    exception: new InvalidDataException("El codigo no es correcto."));
+        _logger.Information($"Se actualiza correctamente la contraseña del usuario {existingUser.Id}.");
+    }
 
-            if (existingUser.ResetPassword.ExpirationDate < resetPassword.UpdateEmailDate)
-                _logger.Warning(
-                    message: $"El codigo del usuario {resetPassword.Id} ya ha expirado.",
-                    exception: new InvalidDataException("El codigo ingresado ya ha expirado, por favor genere uno nuevo."));
+    private Task<string> ConfigureBearerToken(
+        UserInformationDto userInformation,
+        string role)
+    {
+        ClaimsIdentity claims = new();
 
-            // Se actualiza el email en el servicio UserManagement.
+        claims.AddClaim(new("sub", userInformation.Id));
+        claims.AddClaim(new("name", userInformation.Name));
+        claims.AddClaim(new("surname", userInformation.Surname));
+        claims.AddClaim(new("email", userInformation.Email));
+        claims.AddClaim(new(ClaimTypes.Role, role));
 
-            await _userManagementService.UpdateProfileEmail(
-                userId: existingUser.UserId,
-                email: resetPassword.NewEmail);
+        var bearerToken = _jwtTokenSettings.GenerateBearerToken(claims: claims);
 
-            // Se actualiza el email en la BD.
+        _logger.Information($"Se genera el BearerToken del usuario {userInformation.Id} exitosamente.");
 
-            await _authUserRepository.UpdateEmailByIdAndStatus(
-                id: resetPassword.Id,
-                email: resetPassword.NewEmail);
-
-            // Se envia el correo para confirmar la actualizacion.
-
-            var userEmails = new List<string> { existingUser.Email, resetPassword.NewEmail };
-            var subject = "Email actualizado exitosamente!";
-
-            var bodyBuilder = new BodyBuilder
-            {
-                HtmlBody = $"Buen día. Por medio de este mensaje se desea informar que la direccion de correo <b>{resetPassword.NewEmail}</b> ha sido actualizada exitosamente."
-            };
-
-            await EmailUtils.SendEmailToUsers(
-                userEmails: userEmails,
-                subject: subject,
-                bodyBuilder: bodyBuilder);
-
-            _logger.Information($"Se actualiza correctamente el email del usuario {existingUser.Id}.");
-        }
-        public async Task UpdatePassword(UserToUpdatePasswordDto userToUpdatePassword)
-        {
-            // Valida que el Id ingresado sea correcto.
-
-            var existingUser = await _authUserRepository.FindOneByUserIdAndStatus(userId: userToUpdatePassword.Id);
-
-            if (existingUser is null)
-                _logger.Warning(
-                    message: $"El usuario con id {userToUpdatePassword.Id} no se encuentra activo en el sistema.",
-                    exception: new InvalidDataException("El usuario no se encuentra activo en el sistema."));
-
-            // Valida que la contraseña sea correcta.
-
-            var tokenizedPassword = await _tokenizationDataService.TokenizeExistingPassword(
-                                        tokenizedValue: new()
-                                        {
-                                            TokenizedValue = userToUpdatePassword.CurrentPassword,
-                                            SecretId = existingUser.SecretId
-                                        });
-
-            if (!tokenizedPassword.Equals(existingUser.Password))
-                _logger.Warning(
-                    message: $"La contraseña es incorrecta.",
-                    exception: new InvalidDataException("La contraseña es incorrecta."));
-
-            // Se tokeniza la nueva contraseña.
-
-            var newTokenizedPassword = await _tokenizationDataService.TokenizePassword(value: userToUpdatePassword.NewPassword);
-
-            // Se actualiza la contraseña en la base de datos.
-
-            await _authUserRepository.UpdatePasswordAndSecretIdByIdAndStatus(
-                id: existingUser.Id,
-                newPassword: newTokenizedPassword.TokenizedValue,
-                secretId: newTokenizedPassword.SecretId);
-
-            _logger.Information($"Se actualiza correctamente la contraseña del usuario {existingUser.Id}.");
-        }
-
-        private Task<string> ConfigureBearerToken(
-            UserInformationDto userInformation,
-            string role)
-        {
-            ClaimsIdentity claims = new();
-
-            claims.AddClaim(new("sub", userInformation.Id));
-            claims.AddClaim(new("name", userInformation.Name));
-            claims.AddClaim(new("surname", userInformation.Surname));
-            claims.AddClaim(new("email", userInformation.Email));
-            claims.AddClaim(new(ClaimTypes.Role, role));
-
-            var bearerToken = _jwtTokenSettings.GenerateBearerToken(claims: claims);
-
-            _logger.Information($"Se genera el BearerToken del usuario {userInformation.Id} exitosamente.");
-
-            return Task.FromResult(result: bearerToken);
-        }
+        return Task.FromResult(result: bearerToken);
     }
 }

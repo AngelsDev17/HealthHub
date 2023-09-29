@@ -1,7 +1,6 @@
 
 // Builder
 using Angels.Packages.JwtToken.ExtensionMethods;
-using Angels.Packages.Logger.Enums;
 using Angels.Packages.Logger.ExtensionMethods;
 using HealthHub.BusinessLogic.ExtensionMethods;
 using HealthHub.Persistence.ExtensionMethods;

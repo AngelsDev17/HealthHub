@@ -35,13 +35,6 @@ public class DomainListsConfiguration
     }
 
     [Fact]
-    public async Task UpdateJuridicalIdentificationTypeDomainList()
-    {
-        await _databaseFixture._juridicalIdentificationTypeRepository.DeleteManyAsync();
-        await _databaseFixture._juridicalIdentificationTypeRepository.InsertManyAsync(entities: UserDomainListMockData.JuridicalIdentificationTypes);
-    }
-
-    [Fact]
     public async Task UpdateLocalityDomainList()
     {
         await _databaseFixture._localityRepository.DeleteManyAsync();

@@ -13,6 +13,5 @@ public class DomainListsProfile : Profile
 
         CreateMap<ReferencedValueDto, ReferencedValue>().ReverseMap();
         CreateMap<IdentificationDto, Identification>().ReverseMap();
-        CreateMap<JuridicalIdentificationDto, JuridicalIdentification>().ReverseMap();
     }
 }
