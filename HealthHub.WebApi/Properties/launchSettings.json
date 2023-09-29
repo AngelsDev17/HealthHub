@@ -1,12 +1,9 @@
-﻿{
-  "$schema": "https://json.schemastore.org/launchsettings.json",
+{
   "profiles": {
     "http": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
       "launchBrowser": true,
       "launchUrl": "swagger",
-      "applicationUrl": "http://localhost:5046",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DbSettings__ConnectionString": "mongodb://localhost:27017/",
@@ -22,14 +19,14 @@
         "ENV__EMAIL_PASSWORD": "bnpdnueyztavmtcc",
         "ENV__EXPIRATION_DATE_DAYS": "1",
         "ENV__PROJECT_NAME": "HealthHub"
-      }
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:5046"
     },
     "https": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
       "launchBrowser": true,
       "launchUrl": "swagger",
-      "applicationUrl": "https://localhost:7042;http://localhost:5046",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DbSettings__ConnectionString": "mongodb://localhost:27017/",
@@ -45,7 +42,19 @@
         "ENV__EMAIL_PASSWORD": "bnpdnueyztavmtcc",
         "ENV__EXPIRATION_DATE_DAYS": "1",
         "ENV__PROJECT_NAME": "HealthHub"
-      }
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7042;http://localhost:5046"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/swagger",
+      "environmentVariables": {
+        "ASPNETCORE_URLS": "http://+:80"
+      },
+      "publishAllPorts": true
     }
-  }
+  },
+  "$schema": "https://json.schemastore.org/launchsettings.json"
 }
