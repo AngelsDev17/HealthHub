@@ -6,7 +6,7 @@ EXPOSE 80
 EXPOSE 443
 
 ENV ASPNETCORE_ENVIRONMENT="Development"
-ENV DbSettings__ConnectionString="mongodb://localhost:27017/"
+ENV DbSettings__ConnectionString="mongodb+srv://angelsusername:dvcCuvkkO5eA9Www@angelscluster.qa7srgp.mongodb.net/"
 ENV DbSettings__DatabaseName="HealthHubDb"
 ENV DbSettings__DomainListDatabaseName="HealthHubDomainListsDb"
 ENV JwtTokenSettings__Issuer="HealthHub"

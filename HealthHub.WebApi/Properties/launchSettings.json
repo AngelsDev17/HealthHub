@@ -6,7 +6,7 @@
       "launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "DbSettings__ConnectionString": "mongodb://localhost:27017/",
+        "DbSettings__ConnectionString": "mongodb+srv://angelsusername:dvcCuvkkO5eA9Www@angelscluster.qa7srgp.mongodb.net/",
         "DbSettings__DatabaseName": "HealthHubDb",
         "DbSettings__DomainListDatabaseName": "HealthHubDomainListsDb",
         "JwtTokenSettings__Issuer": "HealthHub",
@@ -29,7 +29,7 @@
       "launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "DbSettings__ConnectionString": "mongodb://localhost:27017/",
+        "DbSettings__ConnectionString": "mongodb+srv://angelsusername:dvcCuvkkO5eA9Www@angelscluster.qa7srgp.mongodb.net/",
         "DbSettings__DatabaseName": "HealthHubDb",
         "DbSettings__DomainListDatabaseName": "HealthHubDomainListsDb",
         "JwtTokenSettings__Issuer": "HealthHub",

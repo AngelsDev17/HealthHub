@@ -29,7 +29,7 @@ public class DatabaseFixture : IAsyncLifetime
         var dbSettings = new DbSettings()
         {
             DatabaseName = "HealthHubDomainListsDb",
-            ConnectionString = "mongodb://localhost:27017"
+            ConnectionString = "mongodb+srv://angelsusername:dvcCuvkkO5eA9Www@angelscluster.qa7srgp.mongodb.net/"
         };
 
         _applicationDbContext = new ApplicationDbContext(dbSettings);
