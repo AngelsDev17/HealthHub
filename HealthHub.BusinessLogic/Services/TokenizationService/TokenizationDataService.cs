@@ -7,91 +7,87 @@ using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace HealthHub.BusinessLogic.Services.TokenizationService
+namespace HealthHub.BusinessLogic.Services.TokenizationService;
+
+public class TokenizationDataService : ITokenizationDataService
 {
-    public class TokenizationDataService : ITokenizationDataService
+    private readonly ILogger<TokenizationDataService> _logger;
+    private readonly ITokenizationManagementService _tokenizationManagementService;
+    private readonly IPasswordSecretRepository _passwordSecretRepository;
+
+    public TokenizationDataService(
+        ILogger<TokenizationDataService> logger,
+        ITokenizationManagementService tokenizationManagementService,
+        IPasswordSecretRepository passwordSecretRepository)
     {
-        private readonly ILogger<TokenizationDataService> _logger;
-        private readonly ITokenizationManagementService _tokenizationManagementService;
-        private readonly IPasswordSecretRepository _passwordSecretRepository;
-        private readonly IMapper _mapper;
+        _logger = logger;
+        _tokenizationManagementService = tokenizationManagementService;
+        _passwordSecretRepository = passwordSecretRepository;
+    }
 
-        public TokenizationDataService(
-            ILogger<TokenizationDataService> logger,
-            ITokenizationManagementService tokenizationManagementService,
-            IPasswordSecretRepository passwordSecretRepository,
-            IMapper mapper)
+
+    public async Task<string> TokenizeSystemValue(string value)
+    {
+        var systemSecret = await _tokenizationManagementService.GetCurrentSystemSecret();
+
+        _logger.Debug("Se obtiene el secreto de sistema.");
+
+        return await GenerateFinalValue(
+            secret: systemSecret,
+            value: value);
+    }
+
+    public async Task<TokenizedValueDto> TokenizePassword(string value)
+    {
+        var currentSecret = await _passwordSecretRepository.FindOneByStatusAsync();
+
+        if (currentSecret is null || currentSecret.ExpirationDate < DateTime.Now)
         {
-            _logger = logger;
-            _tokenizationManagementService = tokenizationManagementService;
-            _passwordSecretRepository = passwordSecretRepository;
-            _mapper = mapper;
-        }
+            var (secretId, secret) = await _tokenizationManagementService.GenerateNewPasswordSecret();
 
-
-        public async Task<string> TokenizeSystemValue(string value)
-        {
-            var systemSecret = await _tokenizationManagementService.GetCurrentSystemSecret();
-
-            _logger.Debug("Se obtiene el secreto de sistema.");
-
-            return await GenerateFinalValue(
-                secret: systemSecret,
-                value: value);
-        }
-
-        public async Task<TokenizedValueDto> TokenizePassword(string value)
-        {
-            var currentSecret = await _passwordSecretRepository.FindOneByStatusAsync();
-
-            if (currentSecret is null || currentSecret.ExpirationDate < DateTime.Now)
+            currentSecret = new()
             {
-                var (secretId, secret) = await _tokenizationManagementService.GenerateNewPasswordSecret();
-
-                currentSecret = new()
-                {
-                    Id = secretId,
-                    Secret = secret,
-                };
-            }
-
-            _logger.Debug("Se obtiene el secreto de password.");
-
-            var tokenizedValue = await GenerateFinalValue(
-                secret: currentSecret.Secret,
-                value: value);
-
-            return new()
-            {
-                TokenizedValue = tokenizedValue,
-                SecretId = currentSecret.Id,
+                Id = secretId,
+                Secret = secret,
             };
         }
-        public async Task<string> TokenizeExistingPassword(TokenizedValueDto tokenizedValue)
+
+        _logger.Debug("Se obtiene el secreto de password.");
+
+        var tokenizedValue = await GenerateFinalValue(
+            secret: currentSecret.Secret,
+            value: value);
+
+        return new()
         {
-            var secret = await _passwordSecretRepository.FindOneByIdAsync(entityId: tokenizedValue.SecretId);
+            TokenizedValue = tokenizedValue,
+            SecretId = currentSecret.Id,
+        };
+    }
+    public async Task<string> TokenizeExistingPassword(TokenizedValueDto tokenizedValue)
+    {
+        var secret = await _passwordSecretRepository.FindOneByIdAsync(entityId: tokenizedValue.SecretId);
 
-            if (secret is null)
-                _logger.Warning(
-                    message: $"El secreto {tokenizedValue.SecretId} no existe.",
-                    exception: new InvalidDataException("El secreto no existe."));
+        if (secret is null)
+            _logger.Warning(
+                message: $"El secreto {tokenizedValue.SecretId} no existe.",
+                exception: new InvalidDataException("El secreto no existe."));
 
-            _logger.Debug("Se obtiene el secreto de password.");
+        _logger.Debug("Se obtiene el secreto de password.");
 
-            return await GenerateFinalValue(
-                secret: secret.Secret,
-                value: tokenizedValue.TokenizedValue);
-        }
+        return await GenerateFinalValue(
+            secret: secret.Secret,
+            value: tokenizedValue.TokenizedValue);
+    }
 
-        private static Task<string> GenerateFinalValue(byte[] secret, string value)
-        {
-            using var hmac256 = new HMACSHA256(secret);
-            using var stream = new MemoryStream(Encoding.ASCII.GetBytes(value));
+    private static Task<string> GenerateFinalValue(byte[] secret, string value)
+    {
+        using var hmac256 = new HMACSHA256(secret);
+        using var stream = new MemoryStream(Encoding.ASCII.GetBytes(value));
 
-            var tokenizedValue = hmac256.ComputeHash(stream)
-                                        .Aggregate("", (s, e) => s + string.Format("{0:x2}", e), s => s);
+        var tokenizedValue = hmac256.ComputeHash(stream)
+                                    .Aggregate("", (s, e) => s + string.Format("{0:x2}", e), s => s);
 
-            return Task.FromResult(tokenizedValue);
-        }
+        return Task.FromResult(tokenizedValue);
     }
 }

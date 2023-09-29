@@ -2,37 +2,32 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace HealthHub.WebApi.Controllers
+namespace HealthHub.WebApi.Controllers;
+
+[ApiExplorerSettings(GroupName = "management-page")]
+[Tags("Administración de clientes y profesionales")]
+[Route("user-management-service"), ApiController, Authorize(Roles = "255")]
+public class UserController : ControllerBase
 {
-    [ApiExplorerSettings(GroupName = "management-page")]
-    [Tags("Administración de clientes y profesionales")]
-    [Route("user-management-service"), ApiController, Authorize(Roles = "255")]
-    public class UserController : ControllerBase
+    private readonly IUserManagementService _userManagementService;
+
+    public UserController(IUserManagementService userManagementService)
     {
-        private readonly ILogger<UserController> _logger;
-        private readonly IUserManagementService _userManagementService;
+        _userManagementService = userManagementService;
+    }
 
-        public UserController(
-            ILogger<UserController> logger,
-            IUserManagementService userManagementService)
+
+    [HttpGet("get-all-users")]
+    public async Task<IActionResult> GetAllUsers()
+    {
+        try
         {
-            _logger = logger;
-            _userManagementService = userManagementService;
+            var users = await _userManagementService.GetAllUsers();
+            return Ok(users);
         }
-
-
-        [HttpGet("get-all-users")]
-        public async Task<IActionResult> GetAllUsers()
+        catch (Exception ex)
         {
-            try
-            {
-                var users = await _userManagementService.GetAllUsers();
-                return Ok(users);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return BadRequest(ex.Message);
         }
     }
 }
