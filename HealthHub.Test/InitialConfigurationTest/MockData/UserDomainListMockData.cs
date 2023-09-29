@@ -1,4 +1,4 @@
-﻿using HealthHub.Domain.DomainLists.User;
+﻿using HealthHub.Domain.Models.DomainLists.User;
 
 namespace HealthHub.Test.InitialConfigurationTest.MockData
 {
@@ -6,13 +6,13 @@ namespace HealthHub.Test.InitialConfigurationTest.MockData
     {
         public static List<City> Cities => new()
         {
-            new() { Id = "001", Text = "Bogotá D.C." }
+            new() { Id = "001", Text = "Bogotá D.C." },
         };
 
         public static List<Gender> Genders => new()
         {
             new() { Id = "Male", Text = "Masculino" },
-            new() { Id = "Female", Text = "Femenino" }
+            new() { Id = "Female", Text = "Femenino" },
         };
 
         public static List<IdentificationType> IdentificationTypes => new()
@@ -20,13 +20,9 @@ namespace HealthHub.Test.InitialConfigurationTest.MockData
             new() { Id = "CC", Text = "Cédula de ciudadanía" },
             new() { Id = "CE", Text = "Cédula de extranjeria" },
             new() { Id = "TI", Text = "Tarjeta de identidad" },
-            new() { Id = "PS", Text = "Pasaporte" }
-        };
-
-        public static List<JuridicalIdentificationType> JuridicalIdentificationTypes => new()
-        {
+            new() { Id = "PS", Text = "Pasaporte" },
             new() { Id = "NIT", Text = "Número de identificación tributaria" },
-            new() { Id = "RUT", Text = "Registro único tributario" }
+            new() { Id = "RUT", Text = "Registro único tributario" },
         };
 
         public static List<Locality> Localities => new()
@@ -57,7 +53,7 @@ namespace HealthHub.Test.InitialConfigurationTest.MockData
         {
             new() { Id = "Client", Text = "Cliente" },
             new() { Id = "Professional", Text = "Profesional de salud" },
-            new() { Id = "255", Text = "Administrador" }
+            new() { Id = "255", Text = "Administrador" },
         };
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Angels.Packages.Cache.Services;
 using Angels.Packages.MongoDb.ApplicationContext;
 using Angels.Packages.MongoDb.Models;
-using HealthHub.Domain.DomainLists.User;
+using HealthHub.Domain.Models.DomainLists.User;
 using HealthHub.Persistence.Repositories.DomainLists.User;
 
 namespace HealthHub.Test.InitialConfigurationTest;
@@ -13,14 +13,12 @@ public class DatabaseFixture : IAsyncLifetime
     public readonly IMongoCollection<City> _collectionCity;
     public readonly IMongoCollection<Gender> _collectionGender;
     public readonly IMongoCollection<IdentificationType> _collectionIdentificationType;
-    public readonly IMongoCollection<JuridicalIdentificationType> _collectionJuridicalIdentificationType;
     public readonly IMongoCollection<Locality> _collectionLocality;
     public readonly IMongoCollection<Role> _collectionRole;
 
     public readonly CityRepository _cityRepository;
     public readonly GenderRepository _genderRepository;
     public readonly IdentificationTypeRepository _identificationTypeRepository;
-    public readonly JuridicalIdentificationTypeRepository _juridicalIdentificationTypeRepository;
     public readonly LocalityRepository _localityRepository;
     public readonly RoleRepository _roleRepository;
 
@@ -39,7 +37,6 @@ public class DatabaseFixture : IAsyncLifetime
         _collectionCity = _applicationDbContext.SetMongoCollection<City>();
         _collectionGender = _applicationDbContext.SetMongoCollection<Gender>();
         _collectionIdentificationType = _applicationDbContext.SetMongoCollection<IdentificationType>();
-        _collectionJuridicalIdentificationType = _applicationDbContext.SetMongoCollection<JuridicalIdentificationType>();
         _collectionLocality = _applicationDbContext.SetMongoCollection<Locality>();
         _collectionRole = _applicationDbContext.SetMongoCollection<Role>();
 
@@ -56,11 +53,6 @@ public class DatabaseFixture : IAsyncLifetime
         _identificationTypeRepository = new IdentificationTypeRepository(
             applicationDbContext: _applicationDbContext,
             logger: Mock.Of<ILogger<IdentificationTypeRepository>>(),
-            cacheService: cacheService);
-
-        _juridicalIdentificationTypeRepository = new JuridicalIdentificationTypeRepository(
-            applicationDbContext: _applicationDbContext,
-            logger: Mock.Of<ILogger<JuridicalIdentificationTypeRepository>>(),
             cacheService: cacheService);
 
         _localityRepository = new LocalityRepository(

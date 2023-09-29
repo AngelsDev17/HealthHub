@@ -9,10 +9,6 @@ public class User : AuditableEntity
     public string Surname { get; set; }
     public int Age { get; set; }
     public Identification Identification { get; set; }
-
-    [BsonIgnoreIfNull,  BsonIgnoreIfDefault]
-    public JuridicalIdentification JuridicalIdentification { get; set; }
-
     public ReferencedValue Gender { get; set; }
     public string PhoneNumber { get; set; }
     public ReferencedValue City { get; set; }

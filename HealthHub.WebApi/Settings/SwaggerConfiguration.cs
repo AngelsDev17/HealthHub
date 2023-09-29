@@ -19,11 +19,6 @@ public class UserToRegisterExample : IExamplesProvider<UserToRegisterDto>
             Value = "1021663015",
             IdentificationType = new() { Id = "CC", Value = "Cédula de ciudadanía" },
         },
-        JuridicalIdentification = new()
-        {
-            Value = "123456789-1",
-            JuridicalIdentificationType = new() { Id = "NIT", Value = "Número de identificación tributaria" },
-        },
         Gender = new() { Id = "Male", Value = "Masculino" },
         PhoneNumber = "3168580636",
         City = new() { Id = "001", Value = "Bogotá D.C." },
